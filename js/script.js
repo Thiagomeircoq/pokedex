@@ -80,7 +80,7 @@ function pokemonEstruture(pokemon, index) {
 let overlayCriado = false;
 
 async function moreInfosPokemon(pokemon, index) {
-    document.getElementById('loading-screen').style.display = 'flex';
+ 
     document.body.style.overflow = 'hidden'
     const container = document.querySelector('.container');
     
@@ -144,10 +144,12 @@ async function moreInfosPokemon(pokemon, index) {
     })
 
     iconPrev.addEventListener('click', () => {
-        overlay.remove();
-        setTimeout(() => {
-            nextPokemon(index, 'prev');
-        }, 300);
+        if (index > 1) {
+            overlay.remove();
+            setTimeout(() => {
+                nextPokemon(index, 'prev');
+            }, 300);
+        }
     })
 
     const pokemonImagem = document.createElement('div');
@@ -270,7 +272,7 @@ async function moreInfosPokemon(pokemon, index) {
     }
 
     async function exibirEvoltuionsPokemon() {
-        loadingScreen.style.display = 'flex';
+       
         const data = await dadosPokemon(index);
         const speciesData = await getSpecies(data);
         try {
@@ -360,7 +362,6 @@ async function moreInfosPokemon(pokemon, index) {
                 const pokemonName = chain.species.name;
                 const pokemonId = chain.species.url.split('/')[6];
                 const evolutionDetails = chain.evolution_details[0];
-                console.log(evolutionDetails)
                 
                 if (evolutionDetails) {
                     // console.log(evolutionDetails);
@@ -403,7 +404,7 @@ async function moreInfosPokemon(pokemon, index) {
         } catch (error) {
             console.error(error);
         }
-        loadingScreen.style.display = 'none';
+
     }
 
     async function exibirWeaknessesPokemon() {
@@ -428,7 +429,6 @@ async function moreInfosPokemon(pokemon, index) {
 
             const weaknessList = document.createElement('ul');
             pokemonWeaknesses.appendChild(weaknessList);
-            console.log(weaknessesData);
             weaknesses.forEach(weakness => {
                 const weaknessItem = document.createElement('li');
                 weaknessItem.innerText = weakness.name;
@@ -461,7 +461,7 @@ async function moreInfosPokemon(pokemon, index) {
             console.error(error);
         }
     }
-    document.getElementById('loading-screen').style.display = 'none';
+
     container.appendChild(overlay);
 }
 
@@ -651,23 +651,27 @@ typesPokemon.forEach(element => {
 async function nextPokemon(index, prevLater) {
     try {
         if (prevLater == 'later') {
-            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${index + 1}`)
+            idPokemon = parseInt(index) + 1;
+
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${idPokemon}`)
 
             if (!response.ok) {
                 throw new Error('Erro ao buscar dados da API.');
             }   
             
             const pokemonData = await response.json();
-            moreInfosPokemon(pokemonData, index + 1);
+            moreInfosPokemon(pokemonData, idPokemon);
         } else {
-            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${index - 1}`)
+            idPokemon = parseInt(index) - 1;
+
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${idPokemon}`)
 
             if (!response.ok) {
                 throw new Error('Erro ao buscar dados da API.');
             }   
             
             const pokemonData = await response.json();
-            moreInfosPokemon(pokemonData, index - 1);
+            moreInfosPokemon(pokemonData, idPokemon);
         }
     } catch (error) {
         console.error();
