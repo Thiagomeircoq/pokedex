@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokedex</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://kit.fontawesome.com/9a785616dc.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pokemon-gif/dist/pokemon-gif.min.js"></script>
+</head>
+<body>
+    <main>
+        <div class="container">
+            <header>
+                <div class="logo">
+                    <img src="img/pokemon-logo.png" alt="">
+                </div>
+                <div class="pesquisa">
+                    <div class="random">
+                        <span><i class="fa-solid fa-shuffle"></i>Random</span>
+                    </div>
+                    <div class="barra-pesquisa">
+                        <input type="text">
+                        <button>
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                </div>
+                <ul class="pokemons-types types-pokemon-filter">
+                    <li id="normal">Normal</li>
+                    <li id="grass">Grass</li>
+                    <li id="fire">Fire</li>
+                    <li id="water">Water</li>
+                    <li id="bug">Bug</li>
+                    <li id="electric">Electric</li>
+                    <li id="rock">Rock</li>
+                    <li id="ghost">Ghost</li>
+                    <li id="poison">Poison</li>
+                    <li id="psychic">Psychic</li>
+                    <li id="flying">Flying</li>
+                    <li id="fighting">Fighting</li>
+                    <li id="ground">Ground</li>
+                    <li id="dragon">Dragon</li>
+                    <li id="dark">Dark</li>
+                    <li id="fairy">Fairy</li>
+                    <li id="ice">Ice</li>
+                    <li id="steel">Steel</li>
+                    <li id="nenhum">Nenhum</li>
+                </ul>
+            </header>
+
+            <div class="pokemons">
+            </div>
+            <div class="mais-pokemons">Load More</div>
+
+            
+            <!-- <div class="overlay">
+                <div class="pokemons-infos">
+                    <div class="topo-detail"></div>
+                    <div class="pokemons-container">
+                        <div class="pokemon-topo">
+                            <div class="exit-detail"><i class="fa-solid fa-xmark"></i></div>
+                            <div class="pokemon-image">
+                                <img src="img/003.png" alt="">
+                            </div>
+                            <div class="pokemon-introduction">
+                                <span>#001</span>
+                                <h2>Bulbassaur</h2>
+                                <div class="pokemons-types">
+                                    <li id="ghost">Ghost</li>
+                                    <li id="poison">Poison</li>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pokemon-resumo">
+                            <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Distinctio tempore nesciunt laboriosam dignissimos provident numquam! Culpa nam sed obcaecati nisi, dicta atque quaerat unde quo voluptatum quasi doloribus consequatur veritatis.</p>
+                        </div>
+                        <div class="pokemon-status">
+                            <h2>Statistics</h2>
+                            <div class="status">
+                                <ul class="statistic-name">
+                                    <li>HP</li>
+                                    <li>Attack</li>
+                                    <li>Defense</li>
+                                    <li>Spc. Attack</li>
+                                    <li>Spc. Defense</li>
+                                    <li>Speed</li>
+                                </ul>
+                                <ul class="statistic-bars">
+                                    <li>HP</li>
+                                    <li>Attack</li>
+                                    <li>Defense</li>
+                                    <li>Spc. Attack</li>
+                                    <li>Spc. Defense</li>
+                                    <li>Speed</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> -->
+            <div id="loading-screen">
+                <p>Loading...</p>
+              </div>
+        </div>
+
+    </main>
+    <script src="js/script.js"></script>
+</body>
+</html>
