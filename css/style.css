@@ -11,6 +11,20 @@
     font-family: "Montserrat";
 }
 
+::-webkit-scrollbar {
+    width: 8px;
+    background-color: transparent;
+}
+  
+::-webkit-scrollbar-thumb {
+    background-color: #242424;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
 :root {
     --cor-fundo: #333333;
     --cor-principal: #D6C889;
@@ -98,6 +112,7 @@ header .pesquisa button:hover {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    justify-content: center;
 }
 
 .pokemons-types li {
@@ -331,7 +346,7 @@ header .pokemons-types li:hover {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    z-index: 9998;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -346,6 +361,7 @@ header .pokemons-types li:hover {
     background-color: var(--cor-fundo);
     color: #fff;
     overflow: auto;
+    position: relative;
 }
 
 .pokemons-infos .topo-detail {
@@ -356,7 +372,7 @@ header .pokemons-types li:hover {
 }
 
 .pokemons-infos .pokemons-container {
-    margin: 25px;
+    margin: 30px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -393,9 +409,12 @@ header .pokemons-types li:hover {
     flex-direction: column;
     justify-content: center;
     gap: 20px;
-
     position: relative;
     z-index: 1;
+}
+
+.pokemons-infos .pokemons-container .pokemon-introduction .pokemons-types{
+    justify-content: start;
 }
 
 .pokemons-infos .pokemons-container .pokemon-introduction h2{
@@ -520,10 +539,39 @@ header .pokemons-types li:hover {
     justify-content: center;
     text-align: center;
     align-items: center;
+    cursor: pointer;
 }
 
 .pokemons-container .pokemon-evolutions ul li img{
     width: 110px;
+}
+
+.pokemons-container .pokemon-evolutions .requirement-evolution {
+    cursor: default;
+    padding: 10px;
+    background-color: #1b1b1b;
+}
+
+.pokemons-container .pokemon-evolutions .item-evolution {
+    width: 40px;
+}
+
+.fa-chevron-left {
+    top: 50%;
+    left: 0;
+    position: absolute;
+    padding: 5px;
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.fa-chevron-right {
+    font-size: 25px;
+    top: 50%;
+    right: 0;
+    position: absolute;
+    padding: 5px;
+    cursor: pointer;
 }
 
 #loading-screen {
@@ -536,11 +584,14 @@ header .pokemons-types li:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-  }
+    z-index: 9999;
+}
   
 #loading-screen p {
     color: #fff;
     font-size: 24px;
+    position: relative;
+    z-index: 9999;
 }
 
 @media (max-width: 780px) {
@@ -568,4 +619,11 @@ header .pokemons-types li:hover {
         padding: 0px;
     }
     
+}
+
+@media (max-width: 500px) {
+    .pokemons-container .pokemon-evolutions ul {
+        display: flex;
+        flex-direction: column;
+    }
 }

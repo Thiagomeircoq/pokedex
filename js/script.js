@@ -47,34 +47,46 @@ function pokemonEstruture(pokemon, index) {
     const typesPokemon = document.createElement('div');
     typesPokemon.classList.add('pokemon-types');
 
-    fetch(`https://pokeapi.co/api/v2/pokemon/${index}`)
-    .then(response => response.json())
-    .then(data => {
-        data.types.forEach(type => {
-            fetch(type.type.url)
-            .then(response => response.json())
-            .then(typeData => {
+    async function typePokemon() {
+        try {
+            const pokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${index}`)
+    
+            if (!pokemonResponse.ok) {
+                throw new Error('Erro ao buscar dados da API');
+            }
+    
+            const pokemonsData = await pokemonResponse.json();
+            const typePromises = pokemonsData.types.map(type => fetch(type.type.url));
+            const typeResponses = await Promise.all(typePromises);
+            const typeDatas = await Promise.all(typeResponses.map(response => response.json()));
+    
+            typeDatas.forEach(typeData => {
                 const typeIcon = document.createElement('img');
-                typeIcon.src += `${getTypeImg(typeData.name)}`;
+                typeIcon.src = `${getTypeImg(typeData.name)}`;
                 typesPokemon.appendChild(typeIcon);
-            })
-            .catch(error => console.error(error));
-        })
-    })
-    .catch(error => console.error(error));
-
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+    
+    typePokemon();
+    
     pokemonContainer.appendChild(typesPokemon);
     pokemonInfo.appendChild(pokemonContainer);
     container.appendChild(pokemonInfo);
 }
 
-function moreInfosPokemon(pokemon, index) {
-    document.body.style.overflow = 'hidden'
+let overlayCriado = false;
 
+async function moreInfosPokemon(pokemon, index) {
+    document.getElementById('loading-screen').style.display = 'flex';
+    document.body.style.overflow = 'hidden'
     const container = document.querySelector('.container');
+    
     const overlay = document.createElement('div');
     overlay.classList.add('overlay');
-    
+
     const pokemonsInfos = document.createElement('div');
     pokemonsInfos.classList.add('pokemons-infos');
     overlay.appendChild(pokemonsInfos);
@@ -114,6 +126,30 @@ function moreInfosPokemon(pokemon, index) {
         document.body.style.overflow = 'auto'
     })
 
+    const iconPrev = document.createElement('i');
+    iconPrev.classList.add('fa-solid');
+    iconPrev.classList.add('fa-chevron-left');
+    pokemonsInfos.appendChild(iconPrev);
+
+    const iconLater = document.createElement('i');
+    iconLater.classList.add('fa-solid');
+    iconLater.classList.add('fa-chevron-right');
+    pokemonsInfos.appendChild(iconLater);
+
+    iconLater.addEventListener('click', () => {
+        overlay.remove();
+        setTimeout(() => {
+            nextPokemon(index, 'later');
+        }, 300);
+    })
+
+    iconPrev.addEventListener('click', () => {
+        overlay.remove();
+        setTimeout(() => {
+            nextPokemon(index, 'prev');
+        }, 300);
+    })
+
     const pokemonImagem = document.createElement('div');
     pokemonImagem.classList.add('pokemon-image');
     pokemonTopo.appendChild(pokemonImagem);
@@ -139,125 +175,248 @@ function moreInfosPokemon(pokemon, index) {
     pokemonsTypes.classList.add('pokemons-types');
     pokemonIntroduction.appendChild(pokemonsTypes);
 
-    fetch(`https://pokeapi.co/api/v2/pokemon/${index}`)
-    .then(response => response.json())
-    .then(data => {
+    async function exibirTypesPokemon() {
+        const data = await dadosPokemon(index);
         data.types.forEach(type => {
-        const typeItem = document.createElement('li');
-        typeItem.id = type.type.name;
-        typeItem.innerText = type.type.name;
-        pokemonsTypes.appendChild(typeItem);
-        });
-        return fetch(data.species.url);
-    })
-    .then(response => response.json())
-    .then(speciesData => {
+            const typeItem = document.createElement('li');
+            typeItem.id = type.type.name;
+            typeItem.innerText = type.type.name;
+            pokemonsTypes.appendChild(typeItem);
+        })
+    }
+    exibirTypesPokemon();
+
+
+    async function getSpecies(data) {
+        const response = await fetch(data.species.url);
+
+        if (!response.ok) {
+            throw new Error('Erro ao buscar dados da API');
+        }
+
+        const speciesData = await response.json();
+        return speciesData;
+    }
+    
+    async function exibirResumePokemon() {
+        const data = await dadosPokemon(index);
+
+        const speciesData = await getSpecies(data);
         const summary = speciesData.flavor_text_entries.find(entry => entry.language.name === "en").flavor_text;
         const pokemonResumo = document.createElement('div');
         pokemonResumo.classList.add('pokemon-resumo');
         pokemonResumo.innerHTML = `<p>${summary}</p>`;
         pokemonContainer.appendChild(pokemonResumo);
 
-        fetch(`https://pokeapi.co/api/v2/pokemon/${index}`)
-        .then(response => response.json())
-        .then(data => {
-            const stats = [
-                { name: 'Attack', value: data.stats.find(stat => stat.stat.name === "attack").base_stat },
-                { name: 'Defense', value: data.stats.find(stat => stat.stat.name === "defense").base_stat },
-                { name: 'HP', value: data.stats.find(stat => stat.stat.name === "hp").base_stat },
-                { name: 'Spc. Attack', value: data.stats.find(stat => stat.stat.name === "special-attack").base_stat },
-                { name: 'Spc. Defense', value: data.stats.find(stat => stat.stat.name === "special-defense").base_stat },
-                { name: 'Speed', value: data.stats.find(stat => stat.stat.name === "speed").base_stat }
-            ];
-        
-            const pokemonStatus = document.createElement('div');
-            pokemonStatus.classList.add('pokemon-status');
-            pokemonContainer.appendChild(pokemonStatus);
+    }
+    exibirResumePokemon().then(() => {
+        exibirStatsPokemon();
+        exibirEvoltuionsPokemon().then(() => {
+            exibirWeaknessesPokemon();
+        })
+    });
 
-            const titlePokemonStatus = document.createElement('h2');
-            titlePokemonStatus.innerText = 'Statistics';
-            pokemonStatus.appendChild(titlePokemonStatus);
+    async function exibirStatsPokemon() {
+        const data = await dadosPokemon(index);
 
-            const status = document.createElement('div');
-            status.classList.add('status');
-            pokemonStatus.appendChild(status);
+        const stats = [
+            { name: 'Attack', value: data.stats.find(stat => stat.stat.name === "attack").base_stat },
+            { name: 'Defense', value: data.stats.find(stat => stat.stat.name === "defense").base_stat },
+            { name: 'HP', value: data.stats.find(stat => stat.stat.name === "hp").base_stat },
+            { name: 'Spc. Attack', value: data.stats.find(stat => stat.stat.name === "special-attack").base_stat },
+            { name: 'Spc. Defense', value: data.stats.find(stat => stat.stat.name === "special-defense").base_stat },
+            { name: 'Speed', value: data.stats.find(stat => stat.stat.name === "speed").base_stat }
+        ];
+    
+        const pokemonStatus = document.createElement('div');
+        pokemonStatus.classList.add('pokemon-status');
+        pokemonContainer.appendChild(pokemonStatus);
 
-            const statisticName = document.createElement('div');
-            statisticName.classList.add('statistic-name');
-            status.appendChild(statisticName);
+        const titlePokemonStatus = document.createElement('h2');
+        titlePokemonStatus.innerText = 'Statistics';
+        pokemonStatus.appendChild(titlePokemonStatus);
 
-            const statBar = document.createElement('div');
-            statBar.classList.add('statistic-bars');
-            status.appendChild(statBar);
+        const status = document.createElement('div');
+        status.classList.add('status');
+        pokemonStatus.appendChild(status);
 
-            stats.forEach(stat => {
-          
-                const statName = document.createElement('li');
-                statName.innerText = `${stat.name}:`;
-                statisticName.appendChild(statName);
+        const statisticName = document.createElement('div');
+        statisticName.classList.add('statistic-name');
+        status.appendChild(statisticName);
 
-                const barsValue = document.createElement('li');
-                statBar.appendChild(barsValue);
+        const statBar = document.createElement('div');
+        statBar.classList.add('statistic-bars');
+        status.appendChild(statBar);
 
-                const bars = document.createElement('div');
-                bars.classList.add('statistic-bar')
-                bars.id = stat.name.toLowerCase();
-                bars.style.width = `${stat.value}px`;
-                barsValue.appendChild(bars);
+        stats.forEach(stat => {
+      
+            const statName = document.createElement('li');
+            statName.innerText = `${stat.name}:`;
+            statisticName.appendChild(statName);
 
-                const statValue = document.createElement('span');
-                statValue.innerText = stat.value;
-                barsValue.appendChild(statValue);
-            });
-            const evolutionChainUrl = speciesData.evolution_chain.url;
+            const barsValue = document.createElement('li');
+            statBar.appendChild(barsValue);
+
+            const bars = document.createElement('div');
+            bars.classList.add('statistic-bar')
+            bars.id = stat.name.toLowerCase();
+            bars.style.width = `${stat.value}px`;
+            barsValue.appendChild(bars);
+
+            const statValue = document.createElement('span');
+            statValue.innerText = stat.value;
+            barsValue.appendChild(statValue);
+        });
+    }
+
+    async function exibirEvoltuionsPokemon() {
+        loadingScreen.style.display = 'flex';
+        const data = await dadosPokemon(index);
+        const speciesData = await getSpecies(data);
+        try {
+            const response = await fetch(speciesData.evolution_chain.url);
+
+            if (!response.ok) {
+                throw new Error('Erro ao buscar dados da API');
+            }
+
+            const evolutionChainData = await response.json();
+            const evolutionChain = getEvolutionChain(evolutionChainData.chain, []);
+            const pokemonEvolutions = document.createElement('div');
+            pokemonEvolutions.classList.add('pokemon-evolutions');
+            pokemonContainer.appendChild(pokemonEvolutions);
+
+            const titlePokemonEvolutions = document.createElement('h2');
+            titlePokemonEvolutions.innerText = 'Evolutions';
+            pokemonEvolutions.appendChild(titlePokemonEvolutions);
+
+            const evolutionList = document.createElement('ul');
+            pokemonEvolutions.appendChild(evolutionList);
             
-            fetch(evolutionChainUrl)
-                .then(response => response.json())
-                .then(evolutionChainData => {
-                    const evolutionChain = getEvolutionChain(evolutionChainData.chain, []);
-                    const pokemonEvolutions = document.createElement('div');
-                    pokemonEvolutions.classList.add('pokemon-evolutions');
-                    pokemonContainer.appendChild(pokemonEvolutions);
+            evolutionChain.forEach((pokemon, index) => {
+                const evolutionItem = document.createElement('li');
+                evolutionItem.classList.add('info-card');
+                evolutionItem.id = pokemon.id;
 
-                    const titlePokemonEvolutions = document.createElement('h2');
-                    titlePokemonEvolutions.innerText = 'Evolutions';
-                    pokemonEvolutions.appendChild(titlePokemonEvolutions);
+                evolutionItem.addEventListener('click', () => {
+                    overlay.remove();
+                    setTimeout(() => {
+                        moreInfosPokemon(pokemon, evolutionItem.id);
+                    }, 300);
+                })
 
-                    const evolutionList = document.createElement('ul');
-                    pokemonEvolutions.appendChild(evolutionList);
-             
-                    evolutionChain.forEach((pokemon, index) => {
-                        const evolutionItem = document.createElement('li');
-                        const imagemEvolution = document.createElement('img');
-                        imagemEvolution.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`; // constrói a URL do sprite
-                        imagemEvolution.alt = pokemon.name;
-                        const pokemonEvolution = document.createElement('span');
-                        pokemonEvolution.innerText = pokemon.name;
+                const imagemEvolution = document.createElement('img');
+                imagemEvolution.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
+                imagemEvolution.alt = pokemon.name;
+                const pokemonEvolution = document.createElement('span');
+                pokemonEvolution.innerText = pokemon.name;
+                
+                if (pokemon.level != undefined) {
+                    const formEvolution = document.createElement('li');
+                    formEvolution.classList.add('requirement-evolution');
 
-                        evolutionItem.appendChild(imagemEvolution);
-                        evolutionItem.appendChild(pokemonEvolution);
-                        evolutionList.appendChild(evolutionItem);
-                    });
-                });
+                    const lvlItem = document.createElement('span');
+                    lvlItem.innerText = pokemon.level;
+                    const lvlText = document.createElement('span');
+                    lvlText.innerText = 'lvl';
+                    
+                    formEvolution.appendChild(lvlItem);
+                    formEvolution.appendChild(lvlText);
+                    evolutionList.appendChild(formEvolution);
+                } 
+                
+                if (pokemon.typeEvolution) {
+                    const formEvolution = document.createElement('li');
+                    formEvolution.classList.add('requirement-evolution');
+                    
+                    if (pokemon.typeEvolution.icon) {
+                        const typeEvolutionIcon = document.createElement('img');
+                        typeEvolutionIcon.classList.add('item-evolution');
+                        typeEvolutionIcon.src = pokemon.typeEvolution.icon;
+                        formEvolution.appendChild(typeEvolutionIcon);
+                    }
+
+                    if (pokemon.typeEvolution.data) {
+                        const typeEvolutionData = document.createElement('span');
+                        typeEvolutionData.innerText = pokemon.typeEvolution.data;
+                        formEvolution.appendChild(typeEvolutionData);
+                    }
+
+                    if (pokemon.typeEvolution.name) {
+                        const typeEvolutionName = document.createElement('span');
+                        typeEvolutionName.innerText = pokemon.typeEvolution.name;
+                        formEvolution.appendChild(typeEvolutionName);
+                    }
+
+                    evolutionList.appendChild(formEvolution);
+                }
+                
+                evolutionItem.appendChild(imagemEvolution);
+                evolutionItem.appendChild(pokemonEvolution);
+                evolutionList.appendChild(evolutionItem);
+            });
 
             function getEvolutionChain(chain, chainArray) {
                 const pokemonName = chain.species.name;
                 const pokemonId = chain.species.url.split('/')[6];
-                chainArray.push({ name: pokemonName, id: pokemonId });
+                const evolutionDetails = chain.evolution_details[0];
+                console.log(evolutionDetails)
+                
+                if (evolutionDetails) {
+                    // console.log(evolutionDetails);
+                    if (evolutionDetails.min_level) {
+                        chainArray.push({ name: pokemonName, id: pokemonId, level: evolutionDetails.min_level });
+                    } else if (evolutionDetails.item) {
+                        const itemName = evolutionDetails.item.name;
+                        const itemUrl = `https://pokeapi.co/api/v2/item/${evolutionDetails.item.url.split('/')[6]}/`;
+                        const itemSpriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
+                        chainArray.push({ name: pokemonName, id: pokemonId, typeEvolution: { name: itemName, icon: itemSpriteUrl, url: itemUrl } });
+                    } else if (evolutionDetails.min_level) {
+                        chainArray.push({ name: pokemonName, id: pokemonId, typeEvolution: { name: 'Lvl', data: evolutionDetails.min_level } });
+                    } else if (evolutionDetails.min_happiness) {
+                        chainArray.push({ name: pokemonName, id: pokemonId, typeEvolution: { name: 'Happiness', data: evolutionDetails.min_happiness } });
+                    } else if (evolutionDetails.min_affection) {
+                        chainArray.push({ name: pokemonName, id: pokemonId, typeEvolution: { name: 'Affection', data: evolutionDetails.min_affection } });
+                    } else if (evolutionDetails.trigger.name === 'trade') {
+                        chainArray.push({ name: pokemonName, id: pokemonId, typeEvolution: {data: evolutionDetails.trigger.name } });
+                    } else if (evolutionDetails.min_beauty) {
+                        chainArray.push({ name: pokemonName, id: pokemonId, typeEvolution: { name: 'Beauty', data: evolutionDetails.min_beauty } });
+                    } else if (evolutionDetails.known_move) {
+                        chainArray.push({ name: pokemonName, id: pokemonId, typeEvolution: { name: 'Move', data: evolutionDetails.known_move.name } });
+                    } else if (evolutionDetails.location) {
+                        chainArray.push({ name: pokemonName, id: pokemonId, typeEvolution: { name: 'Level up near route', data: evolutionDetails.location.name } });
+                    }
+                 
+                } else {
+                    chainArray.push({ name: pokemonName, id: pokemonId });
+                }
+            
                 if (chain.evolves_to.length > 0) {
                     chain.evolves_to.forEach(pokemon => {
-                        console.log(pokemon);
                         getEvolutionChain(pokemon, chainArray);
                     });
                 }
+                
                 return chainArray;
             }
 
-            return fetch(data.types[0].type.url);
-        })
-        .then(response => response.json())
-        .then(typeData => {
-            const weaknesses = typeData.damage_relations.double_damage_from;
+        } catch (error) {
+            console.error(error);
+        }
+        loadingScreen.style.display = 'none';
+    }
+
+    async function exibirWeaknessesPokemon() {
+        const data = await dadosPokemon(index);
+        try {
+            const response = await fetch(data.types[0].type.url)
+
+            if (!response.ok) {
+                throw new Error('Erro ao buscar dados da API');
+            }
+
+            const weaknessesData = await response.json();
+            const weaknesses = weaknessesData.damage_relations.double_damage_from;
             const pokemonWeaknesses = document.createElement('div');
             pokemonWeaknesses.classList.add('pokemon-weaknesses');
             pokemonWeaknesses.classList.add('pokemons-types');
@@ -269,31 +428,79 @@ function moreInfosPokemon(pokemon, index) {
 
             const weaknessList = document.createElement('ul');
             pokemonWeaknesses.appendChild(weaknessList);
-
+            console.log(weaknessesData);
             weaknesses.forEach(weakness => {
                 const weaknessItem = document.createElement('li');
                 weaknessItem.innerText = weakness.name;
                 weaknessItem.id = weakness.name;
                 weaknessList.appendChild(weaknessItem);
             });
-        })
-    })
-    
+            
+            const advantages = weaknessesData.damage_relations.double_damage_to;
+            const pokemonAdvantage = document.createElement('div');
+            pokemonAdvantage.classList.add('pokemon-weaknesses');
+            pokemonAdvantage.classList.add('pokemons-types');
+            pokemonContainer.appendChild(pokemonAdvantage);
+
+            const titlePokemonAdvantage = document.createElement('h2');
+            titlePokemonAdvantage.innerText = 'Advantage';
+            pokemonAdvantage.appendChild(titlePokemonAdvantage);
+
+            const advantageList = document.createElement('ul');
+            pokemonAdvantage.appendChild(advantageList);
+            
+            advantages.forEach(advantage => {
+                const advantageItem = document.createElement('li');
+                advantageItem.innerText = advantage.name;
+                advantageItem.id = advantage.name;
+                advantageList.appendChild(advantageItem);
+            });
+            
+
+        } catch (error) {
+            console.error(error);
+        }
+    }
+    document.getElementById('loading-screen').style.display = 'none';
     container.appendChild(overlay);
 }
 
 
-function pokemonsLoader(qtdPokemons) {
-    fetch(`https://pokeapi.co/api/v2/pokemon?limit=${qtdPokemons}`)
-    .then(response => response.json())
-    .then(data => {
+
+async function dadosPokemon(index) {
+    try {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${index}`)
+        
+        if (!response.ok) {
+            throw new Error('Erro ao buscar dados da APi.');
+        }
+
+        const data = await response.json();
+
+        return data;
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+async function pokemonsLoader(qtdPokemons) {
+    try {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${qtdPokemons}`);
+
+        if (!response.ok) {
+        throw new Error('Erro ao buscar dados da API.');
+        }
+
+        const data = await response.json();
         container.innerHTML = "";
 
         data.results.forEach((pokemon, index) => {
         pokemonEstruture(pokemon, index + 1);
-      });
-    })
-    .catch(error => console.error(error));
+        });
+    } catch (error) {
+        console.error(error);
+    }
 }
 pokemonsLoader(24);
 
@@ -307,24 +514,31 @@ maisPokemons.addEventListener('click', function() {
 const pokemonRandom = document.querySelector('.random');
 pokemonRandom.addEventListener('click', randomPokemon)
 
-function randomPokemon () {
-    loadingScreen.style.display = 'flex';
-    fetch(`https://pokeapi.co/api/v2/pokemon-species/`)
-        .then(response => response.json())
-        .then(data => {
-        const totalPokemons = data.count;
+async function randomPokemon() {
+    try {
+        loadingScreen.style.display = 'flex';
+        const speciesResponse = await fetch(`https://pokeapi.co/api/v2/pokemon-species/`);
+
+        if (!speciesResponse.ok) {
+        throw new Error('Erro ao buscar dados da API.');
+        }
+
+        const speciesData = await speciesResponse.json();
+        const totalPokemons = speciesData.count;
         const randomPokemonId = Math.floor(Math.random() * totalPokemons + 1);
 
-        fetch(`https://pokeapi.co/api/v2/pokemon/${randomPokemonId}`)
-            .then(response => response.json())
-            .then(data => {
+        const pokemonResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomPokemonId}`);
 
-            moreInfosPokemon(data, data.id);
-            loadingScreen.style.display = 'none';
-            })
-            .catch(error => console.error(error));
-        })
-        .catch(error => console.error(error));
+        if (!pokemonResponse.ok) {
+        throw new Error('Erro ao buscar dados da API.');
+        }
+
+        const pokemonData = await pokemonResponse.json();
+        moreInfosPokemon(pokemonData, pokemonData.id);
+        loadingScreen.style.display = 'none';
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 
@@ -343,7 +557,7 @@ let pokemonList = [];
 
 async function getPokemonList() {
     try {
-        const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1200');
+        const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1000');
         const data = await response.json();
         pokemonList = data.results;
     } catch (error) {
@@ -352,15 +566,27 @@ async function getPokemonList() {
 }
 
 async function pesquisarPokemon(pesquisa) {
+    loadingScreen.style.display = 'flex';
     pesquisa = pesquisa.toLowerCase();
 
     if (pokemonList.length === 0) {
         await getPokemonList();
     }
 
-    const filteredPokemon = pokemonList.filter(pokemon => {
-        return pokemon.name.includes(pesquisa);
-    });
+    let filteredPokemon = [];
+
+    if (!isNaN(pesquisa)) { // Verifica se a pesquisa é um número
+        const pokemon = pokemonList.find(pokemon => {
+            return parseInt(pokemon.url.split("/")[6]) === parseInt(pesquisa);
+        });
+        if (pokemon) {
+            filteredPokemon.push(pokemon);
+        }
+    } else {
+        filteredPokemon = pokemonList.filter(pokemon => {
+            return pokemon.name.includes(pesquisa);
+        });
+    }
 
     filteredPokemon.sort((a, b) => {
         return a.url.split("/")[6] - b.url.split("/")[6];
@@ -373,43 +599,80 @@ async function pesquisarPokemon(pesquisa) {
     });
 
     const pokemonData = await Promise.all(pokemonPromises);
-    console.log(pokemonData);
 
     pokemonData.forEach(pokemon => {
         pokemonEstruture(pokemon, pokemon.id);
     });
+    loadingScreen.style.display = 'none';
 }
 
 const typesPokemon = document.querySelectorAll('.types-pokemon-filter li');
 
 typesPokemon.forEach(element => {
-    element.addEventListener('click', (event) => {
-    if (element.id == 'nenhum') {
+  element.addEventListener('click', async (event) => {
+    try {
+      if (element.id == 'nenhum') {
         pokemonsLoader(24);
         return;
+      }
+
+      const type = event.target.id;
+      const url = `https://pokeapi.co/api/v2/type/${type}`;
+      loadingScreen.style.display = 'flex';
+
+      const typeResponse = await fetch(url);
+
+      if (!typeResponse.ok) {
+        throw new Error('Erro ao buscar dados da API.');
+      }
+
+      const typeData = await typeResponse.json();
+      const pokemonList = typeData.pokemon;
+
+      const pokemonPromises = pokemonList.map(pokemon => fetch(pokemon.pokemon.url));
+      const pokemonResponses = await Promise.all(pokemonPromises);
+
+      if (!pokemonResponses.every(response => response.ok)) {
+        throw new Error('Erro ao buscar dados da API.');
+      }
+
+      const pokemonDataList = await Promise.all(pokemonResponses.map(response => response.json()));
+      container.innerHTML = "";
+      pokemonDataList.forEach(pokemonData => {
+        pokemonEstruture(pokemonData, pokemonData.id);
+      });
+      loadingScreen.style.display = 'none';
+    } catch (error) {
+      console.error(error);
     }
-    const type = event.target.id;
-    const url = `https://pokeapi.co/api/v2/type/${type}`;
-    loadingScreen.style.display = 'flex';
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            container.innerHTML = "";
-            const pokemonList = data.pokemon;
-            const promises = pokemonList.map(pokemon => fetch(pokemon.pokemon.url));
-            Promise.all(promises)
-                .then(responses => Promise.all(responses.map(res => res.json())))
-                .then(dataList => {
-                    dataList.forEach(pokemonData => {
-                        pokemonEstruture(pokemonData, pokemonData.id);
-                    });
-                    loadingScreen.style.display = 'none';
-                })
-                .catch(error => console.error(error));
-        })
-        .catch(error => console.error(error));
-    });
+  });
 });
+
+async function nextPokemon(index, prevLater) {
+    try {
+        if (prevLater == 'later') {
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${index + 1}`)
+
+            if (!response.ok) {
+                throw new Error('Erro ao buscar dados da API.');
+            }   
+            
+            const pokemonData = await response.json();
+            moreInfosPokemon(pokemonData, index + 1);
+        } else {
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${index - 1}`)
+
+            if (!response.ok) {
+                throw new Error('Erro ao buscar dados da API.');
+            }   
+            
+            const pokemonData = await response.json();
+            moreInfosPokemon(pokemonData, index - 1);
+        }
+    } catch (error) {
+        console.error();
+    }
+}
 
 const getTypeImg = (type) => {
 switch (type) {
